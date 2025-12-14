@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Kaleb’s Christmas List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #22c55e;
+            --accent-soft: rgba(34, 197, 94, 0.12);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --danger: #ef4444;
+            --border: #334155;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                "Segoe UI", sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #1e293b 0, #020617 50%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 12px 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 860px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        header h1 span {
+            font-size: 1.4rem;
+        }
+
+        header small {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .pill {
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        .pill strong {
+            color: var(--accent);
+        }
+
+        .pill span {
+            background: rgba(34, 197, 94, 0.18);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.4fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .card {
+            background: radial-gradient(circle at top left, #1e293b, #020617);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 16px 16px 18px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right,
+                    rgba(34, 197, 94, 0.08),
+                    transparent);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card h2 span {
+            font-size: 1.1rem;
+        }
+
+        .card p {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--muted);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        input,
+        textarea {
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 7px 9px;
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 54px;
+            max-height: 120px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .row>label {
+            flex: 1;
+        }
+
+        .btn {
+            border-radius: 999px;
+            border: none;
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            transition: transform 0.08s ease, box-shadow 0.08s ease,
+                background 0.15s ease;
+            background: linear-gradient(135deg,
+                    var(--accent),
+                    #16a34a);
+            color: #022c22;
+            box-shadow: 0 14px 30px rgba(22, 163, 74, 0.45);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 40px rgba(22, 163, 74, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0px) scale(0.99);
+            box-shadow: 0 10px 25px rgba(22, 163, 74, 0.4);
+        }
+
+        .btn.secondary {
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+
+        .btn.secondary:hover {
+            background: rgba(15, 23, 42, 1);
+        }
+
+        .btn.small {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            box-shadow: none;
+        }
+
+        .list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 520px;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .item {
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 9px 9px;
+            background: rgba(15, 23, 42, 0.9);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .item-main {
+            min-width: 0;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 3px;
+        }
+
+        .title-row strong {
+            font-size: 0.95rem;
+        }
+
+        .title-row a {
+            color: var(--accent);
+            font-size: 0.8rem;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .title-row a:hover {
+            text-decoration: underline;
+        }
+
+        .desc {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 3px;
+            white-space: pre-wrap;
+        }
+
+        .meta {
+            font-size: 0.78rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            color: var(--muted);
+        }
+
+        .badge.bought {
+            border-color: rgba(34, 197, 94, 0.7);
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .badge.you {
+            border-color: rgba(96, 165, 250, 0.7);
+            background: rgba(37, 99, 235, 0.12);
+            color: #93c5fd;
+        }
+
+        .item-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .empty-state {
+            font-size: 0.85rem;
+            color: var(--muted);
+            border-radius: 10px;
+            border: 1px dashed var(--border);
+            padding: 12px;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .mode-banner {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .mode-banner code {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 2px 6px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+
+        .danger-link {
+            font-size: 0.78rem;
+            color: var(--danger);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 999px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header>
+            <div>
+                <h1><span>🎄</span> Kaleb’s Christmas List</h1>
+                <small>
+                    A simple wishlist you can share with friends &amp; family.
+                </small>
+            </div>
+            <div>
+                <div class="pill" id="view-pill">
+                    <strong>View:</strong>
+                    <span id="view-label">Owner</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Left: List -->
+            <section class="card">
+                <div class="card-content">
+                    <h2><span>📦</span> Gift ideas</h2>
+                    <p id="list-subtitle">
+                        Everything I’d love for Christmas this year.
+                    </p>
+
+                    <div class="list" id="list"></div>
+
+                    <div class="empty-state" id="empty-state" style="display: none;">
+                        No items yet.
+                        <span id="empty-owner">Add something on the right to get started!</span>
+                        <span id="empty-friends" style="display: none;">
+                            Check back later once the list is filled in.
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Controls -->
+            <section class="card">
+                <div class="card-content" id="owner-panel">
+                    <h2><span>🧑‍💻</span> Edit my list</h2>
+                    <p>
+                        Add items with links &amp; notes. These only sync on this device
+                        for now (we can hook up a real backend later).
+                    </p>
+
+                    <form id="item-form">
+                        <label>
+                            Item name
+                            <input type="text" id="name" required placeholder="Wireless headphones, books, etc." />
+                        </label>
+
+                        <div class="row">
+                            <label>
+                                Link (optional)
+                                <input type="url" id="url" placeholder="https://example.com/product" />
+                            </label>
+                            <label>
+                                Approx. price (optional)
+                                <input type="text" id="price" placeholder="$50–$100" />
+                            </label>
+                        </div>
+
+                        <label>
+                            Notes (optional)
+                            <textarea id="notes"
+                                placeholder="Size, color, version, or anything else people should know."></textarea>
+                        </label>
+
+                        <button type="submit" class="btn">
+                            <span>➕</span> Add item
+                        </button>
+                    </form>
+
+                    <div class="mode-banner" style="margin-top: 12px;">
+                        Share this link with friends so they can mark things as bought
+                        (without you seeing who bought what):
+                        <br />
+                        <code>?friends=1</code> added to the end of the URL.
+                    </div>
+
+                    <div style="margin-top: 8px;">
+                        <span class="danger-link" id="reset-list">
+                            Reset list on this device
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-content" id="friends-panel" style="display: none;">
+                    <h2><span>🎁</span> Shopping view</h2>
+                    <p>
+                        You’re viewing this as a <strong>gift giver</strong>.
+                        Mark an item as “I bought this” to help avoid duplicates.
+                        Kaleb won’t see what’s marked as bought in his normal view.
+                    </p>
+
+                    <div class="mode-banner" style="margin-top: 10px;">
+                        This demo keeps “bought” status only on <strong>your device</strong>
+                        for now. With a real backend, it will sync for all shoppers.
+                    </div>
+
+                    <div style="margin-top: 8px;">
+                        <span class="danger-link" id="friends-reset">
+                            Clear my purchased marks on this device
+                        </span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // --- View mode detection (owner vs friends) ---
+        const params = new URLSearchParams(window.location.search);
+        const isFriendsView = params.has("friends");
+
+        const viewLabel = document.getElementById("view-label");
+        const listSubtitle = document.getElementById("list-subtitle");
+        const ownerPanel = document.getElementById("owner-panel");
+        const friendsPanel = document.getElementById("friends-panel");
+        const emptyOwner = document.getElementById("empty-owner");
+        const emptyFriends = document.getElementById("empty-friends");
+
+        if (isFriendsView) {
+            viewLabel.textContent = "Friends (shopping)";
+            listSubtitle.textContent =
+                "Pick something you’d like to buy. Mark it as bought to help avoid duplicates.";
+            ownerPanel.style.display = "none";
+            friendsPanel.style.display = "block";
+            emptyOwner.style.display = "none";
+            emptyFriends.style.display = "inline";
+        } else {
+            viewLabel.textContent = "Owner (edit)";
+            listSubtitle.textContent =
+                "Add items & send the friends link so people can shop without spoiling surprises.";
+            ownerPanel.style.display = "block";
+            friendsPanel.style.display = "none";
+            emptyOwner.style.display = "inline";
+            emptyFriends.style.display = "none";
+        }
+
+        // --- Local persistence (prototype) ---
+        const STORAGE_KEY_ITEMS = "xmas_list_items_v1";
+        const STORAGE_KEY_FRIEND_BUYS = "xmas_friend_buys_v1";
+
+        let items = [];
+        let friendBuys = [];
+
+        function loadData() {
+            try {
+                items = JSON.parse(localStorage.getItem(STORAGE_KEY_ITEMS) || "[]");
+            } catch {
+                items = [];
+            }
+            try {
+                friendBuys = JSON.parse(
+                    localStorage.getItem(STORAGE_KEY_FRIEND_BUYS) || "[]"
+                );
+            } catch {
+                friendBuys = [];
+            }
+        }
+
+        function saveItems() {
+            localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(items));
+        }
+
+        function saveFriendBuys() {
+            localStorage.setItem(STORAGE_KEY_FRIEND_BUYS, JSON.stringify(friendBuys));
+        }
+
+        // --- Rendering ---
+        const listEl = document.getElementById("list");
+        const emptyStateEl = document.getElementById("empty-state");
+
+        function render() {
+            listEl.innerHTML = "";
+
+            if (!items.length) {
+                emptyStateEl.style.display = "block";
+                return;
+            }
+            emptyStateEl.style.display = "none";
+
+            // Simple sort: keep insertion order for now
+            items.forEach((item) => {
+                const li = document.createElement("div");
+                li.className = "item";
+
+                const main = document.createElement("div");
+                main.className = "item-main";
+
+                const titleRow = document.createElement("div");
+                titleRow.className = "title-row";
+
+                const title = document.createElement("strong");
+                title.textContent = item.name || "Untitled item";
+                titleRow.appendChild(title);
+
+                if (item.url) {
+                    const link = document.createElement("a");
+                    link.href = item.url;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.textContent = "Link";
+                    titleRow.appendChild(link);
+                }
+
+                main.appendChild(titleRow);
+
+                if (item.notes) {
+                    const desc = document.createElement("div");
+                    desc.className = "desc";
+                    desc.textContent = item.notes;
+                    main.appendChild(desc);
+                }
+
+                const meta = document.createElement("div");
+                meta.className = "meta";
+
+                if (item.price) {
+                    const price = document.createElement("span");
+                    price.className = "badge";
+                    price.textContent = item.price;
+                    meta.appendChild(price);
+                }
+
+                const boughtIdsForThisItem = friendBuys
+                    .filter((b) => b.itemId === item.id)
+                    .map((b) => b.who || "Someone");
+
+                if (isFriendsView && boughtIdsForThisItem.length > 0) {
+                    const bought = document.createElement("span");
+                    bought.className = "badge bought";
+                    bought.textContent =
+                        boughtIdsForThisItem.length === 1
+                            ? "Already bought"
+                            : `${boughtIdsForThisItem.length} people bought`;
+                    meta.appendChild(bought);
+
+                    const you = document.createElement("span");
+                    you.className = "badge you";
+                    you.textContent = "You can still buy too if you want";
+                    meta.appendChild(you);
+                }
+
+                main.appendChild(meta);
+
+                li.appendChild(main);
+
+                const actions = document.createElement("div");
+                actions.className = "item-actions";
+
+                if (isFriendsView) {
+                    const alreadyBoughtByYou = friendBuys.some(
+                        (b) => b.itemId === item.id && b.who === "you"
+                    );
+
+                    const buyBtn = document.createElement("button");
+                    buyBtn.className = "btn small";
+                    buyBtn.innerHTML = alreadyBoughtByYou
+                        ? "<span>↩</span> I didn't buy this"
+                        : "<span>✅</span> I bought this";
+
+                    buyBtn.addEventListener("click", () => {
+                        toggleFriendBuy(item.id);
+                    });
+
+                    actions.appendChild(buyBtn);
+                } else {
+                    // Owner view: edit/remove buttons, but no "bought" info.
+                    const editBtn = document.createElement("button");
+                    editBtn.className = "btn small secondary";
+                    editBtn.textContent = "Edit";
+                    editBtn.addEventListener("click", () => {
+                        startEdit(item.id);
+                    });
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "btn small secondary";
+                    deleteBtn.textContent = "Remove";
+                    deleteBtn.addEventListener("click", () => {
+                        removeItem(item.id);
+                    });
+
+                    actions.appendChild(editBtn);
+                    actions.appendChild(deleteBtn);
+                }
+
+                li.appendChild(actions);
+
+                listEl.appendChild(li);
+            });
+        }
+
+        // --- Owner actions (edit/remove/add) ---
+        const form = document.getElementById("item-form");
+        const nameInput = document.getElementById("name");
+        const urlInput = document.getElementById("url");
+        const priceInput = document.getElementById("price");
+        const notesInput = document.getElementById("notes");
+        const resetListBtn = document.getElementById("reset-list");
+
+        let editingId = null;
+
+        function startEdit(id) {
+            const item = items.find((i) => i.id === id);
+            if (!item) return;
+
+            editingId = id;
+            nameInput.value = item.name || "";
+            urlInput.value = item.url || "";
+            priceInput.value = item.price || "";
+            notesInput.value = item.notes || "";
+
+            form.querySelector("button[type='submit']").innerHTML =
+                "<span>💾</span> Save changes";
+        }
+
+        function resetForm() {
+            editingId = null;
+            nameInput.value = "";
+            urlInput.value = "";
+            priceInput.value = "";
+            notesInput.value = "";
+            form.querySelector("button[type='submit']").innerHTML =
+                "<span>➕</span> Add item";
+        }
+
+        form?.addEventListener("submit", (e) => {
+            e.preventDefault();
+            if (isFriendsView) return; // friends can't edit
+
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
+            const price = priceInput.value.trim();
+            const notes = notesInput.value.trim();
+
+            if (!name) return;
+
+            if (editingId) {
+                const idx = items.findIndex((i) => i.id === editingId);
+                if (idx !== -1) {
+                    items[idx] = {
+                        ...items[idx],
+                        name,
+                        url,
+                        price,
+                        notes,
+                    };
+                }
+            } else {
+                items.push({
+                    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+                    name,
+                    url,
+                    price,
+                    notes,
+                    createdAt: Date.now(),
+                });
+            }
+
+            saveItems();
+            resetForm();
+            render();
+        });
+
+        function removeItem(id) {
+            if (!confirm("Remove this item from your list?")) return;
+            items = items.filter((i) => i.id !== id);
+            friendBuys = friendBuys.filter((b) => b.itemId !== id);
+            saveItems();
+            saveFriendBuys();
+            render();
+        }
+
+        resetListBtn?.addEventListener("click", () => {
+            if (
+                confirm(
+                    "This will clear your entire list on this device only. Continue?"
+                )
+            ) {
+                items = [];
+                friendBuys = [];
+                saveItems();
+                saveFriendBuys();
+                resetForm();
+                render();
+            }
+        });
+
+        // --- Friends actions (mark as bought, local-only for now) ---
+        const friendsResetBtn = document.getElementById("friends-reset");
+
+        function toggleFriendBuy(itemId) {
+            const existingIndex = friendBuys.findIndex(
+                (b) => b.itemId === itemId && b.who === "you"
+            );
+            if (existingIndex !== -1) {
+                friendBuys.splice(existingIndex, 1);
+            } else {
+                friendBuys.push({
+                    itemId,
+                    who: "you",
+                    at: Date.now(),
+                });
+            }
+            saveFriendBuys();
+            render();
+        }
+
+        friendsResetBtn?.addEventListener("click", () => {
+            if (
+                confirm(
+                    "This clears just YOUR 'I bought this' marks on this device. Continue?"
+                )
+            ) {
+                friendBuys = friendBuys.filter((b) => b.who !== "you");
+                saveFriendBuys();
+                render();
+            }
+        });
+
+        // --- Init ---
+        loadData();
+        render();
+
+        // --- NEXT STEP: Backend hook (Supabase/Firebase) ---
+        // To upgrade this from "local-only" to shared data:
+        // - Replace loadData/saveItems with calls to your backend.
+        // - Replace friendBuys logic with a shared "purchases" table.
+        // - Use two URLs:
+        //   - /   → owner view (never requests purchased info)
+        //   - /?friends=1 → gifter view (can read/write purchases)
+    </script>
+</body>
+
+</html>
