@@ -466,12 +466,11 @@
                     <p>
                         You’re viewing this as a <strong>shopper</strong>. Mark an item as “I bought this” to avoid
                         duplicate gifts.
-                        Purchase marks are visible to other shoppers but are hidden to the owner's edit view.
+                        Purchase marks are visible to other shoppers but are hidden to me the owner.
                     </p>
 
                     <div class="mode-banner" style="margin-top: 10px;">
-                        When a friend marks an item as purchased it helps other shoppers avoid duplicates. The owner
-                        will not see who marked purchases.
+                        Marks help shoppers avoid duplicates.
                     </div>
 
                     <div style="margin-top: 8px;">
@@ -509,7 +508,7 @@
         if (isFriendsView) {
             viewLabel.textContent = "Shopping (friends)";
             listSubtitle.textContent =
-                "Browse the list and mark items you plan to buy — this helps avoid duplicate gifts. Marks are visible to other shoppers but not shown in the owner's edit view.";
+                "Browse the list and mark items you plan to buy — this helps avoid duplicate gifts. Marks are visible to other shoppers but are not shown in the owner's edit view.";
             ownerPanel.style.display = "none";
             friendsPanel.style.display = "block";
             emptyOwner.style.display = "none";
@@ -642,15 +641,33 @@
 
                     const buyBtn = document.createElement("button");
                     buyBtn.className = "btn small";
-                    buyBtn.innerHTML = "<span>✅</span> I bought this";
+                    buyBtn.title = hasAnyPurchase
+                        ? "Already marked as bought. Undo only if you were the shopper who marked it."
+                        : "Mark this item as bought";
+
+                    // When not bought: confirm and mark. When already bought: offer undo (clear) with confirm.
+                    buyBtn.addEventListener("click", () => {
+                        if (hasAnyPurchase) {
+                            if (
+                                confirm(
+                                    "This item is already marked as bought. Only remove the mark if you were the shopper who selected it. Remove bought marks for this item?"
+                                )
+                            ) {
+                                clearPurchasesForItem(item.id);
+                            }
+                        } else {
+                            if (confirm("Mark this item as bought? This will mark it for all shoppers.")) {
+                                markBought(item.id);
+                            }
+                        }
+                    });
 
                     if (hasAnyPurchase) {
-                        buyBtn.disabled = true;
-                        buyBtn.textContent = "Already bought";
+                        // Show the already-bought state but keep the button active so shoppers can undo.
+                        buyBtn.innerHTML = "Already bought";
+                        buyBtn.classList.add("secondary");
                     } else {
-                        buyBtn.addEventListener("click", () => {
-                            markBought(item.id);
-                        });
+                        buyBtn.innerHTML = "<span>✅</span> I bought this";
                     }
 
                     actions.appendChild(buyBtn);
