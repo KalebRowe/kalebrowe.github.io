@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Kaleb’s Christmas List</title>
+    <title>Kaleb’s Gift List</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
         :root {
@@ -381,7 +381,7 @@
             <div>
                 <h1><span>🎄</span> Kaleb’s Christmas List</h1>
                 <small>
-                    Kaleb's wishlist to share with friends &amp; family.
+                    A simple, shareable list of gift ideas for friends &amp; family.
                 </small>
             </div>
             <div>
@@ -405,9 +405,9 @@
 
                     <div class="empty-state" id="empty-state" style="display: none;">
                         No items yet.
-                        <span id="empty-owner">Add something on the right to get started!</span>
+                        <span id="empty-owner">Add items using the form on the right.</span>
                         <span id="empty-friends" style="display: none;">
-                            Check back later once the list is filled in.
+                            No items yet — check back later.
                         </span>
                     </div>
                 </div>
@@ -416,10 +416,10 @@
             <!-- Right: Controls -->
             <section class="card">
                 <div class="card-content" id="owner-panel">
-                    <h2><span>🧑‍💻</span> Edit my list</h2>
+                    <h2><span>🧑‍💻</span> Manage my list</h2>
                     <p>
-                        Add items with links &amp; notes. These only sync on this device
-                        for now (we can hook up a real backend later).
+                        Add gift ideas with links, prices, and notes. Share the shopping link so friends can mark
+                        purchases without revealing who bought them.
                     </p>
 
                     <form id="item-form">
@@ -451,15 +451,12 @@
                     </form>
 
                     <div class="mode-banner" style="margin-top: 12px;">
-                        Share this link with friends so they can mark things as bought
-                        (without you seeing who bought what):
-                        <br />
-                        <code>?friends=1</code> added to the end of the URL.
+                        Share this URL with friends so they can shop without spoiling surprises.
                     </div>
 
                     <div style="margin-top: 8px;">
                         <span class="danger-link" id="reset-list">
-                            Reset list on this device
+                            Clear my list
                         </span>
                     </div>
                 </div>
@@ -467,19 +464,19 @@
                 <div class="card-content" id="friends-panel" style="display: none;">
                     <h2><span>🎁</span> Shopping view</h2>
                     <p>
-                        You’re viewing this as a <strong>gift giver</strong>.
-                        Mark an item as “I bought this” to help avoid duplicates.
-                        Kaleb won’t see what’s marked as bought in his normal view.
+                        You’re viewing this as a <strong>shopper</strong>. Mark an item as “I bought this” to avoid
+                        duplicate gifts.
+                        Purchase marks are visible to other shoppers but are hidden to the owner's edit view.
                     </p>
 
                     <div class="mode-banner" style="margin-top: 10px;">
-                        This demo keeps “bought” status only on <strong>your device</strong>
-                        for now. With a real backend, it will sync for all shoppers.
+                        When a friend marks an item as purchased it helps other shoppers avoid duplicates. The owner
+                        will not see who marked purchases.
                     </div>
 
                     <div style="margin-top: 8px;">
                         <span class="danger-link" id="friends-reset">
-                            Clear my purchased marks on this device
+                            Clear purchase marks
                         </span>
                     </div>
                 </div>
@@ -499,7 +496,8 @@
 
         // --- View mode detection (owner vs friends) ---
         const params = new URLSearchParams(window.location.search);
-        const isFriendsView = params.has("friends");
+        // Default to friends/shopping view unless you explicitly add ?owner
+        const isFriendsView = !params.has("owner");
 
         const viewLabel = document.getElementById("view-label");
         const listSubtitle = document.getElementById("list-subtitle");
@@ -509,17 +507,17 @@
         const emptyFriends = document.getElementById("empty-friends");
 
         if (isFriendsView) {
-            viewLabel.textContent = "Friends (shopping)";
+            viewLabel.textContent = "Shopping (friends)";
             listSubtitle.textContent =
-                "Pick something you’d like to buy. Mark it as bought to help avoid duplicates.";
+                "Browse the list and mark items you plan to buy — this helps avoid duplicate gifts. Marks are visible to other shoppers but not shown in the owner's edit view.";
             ownerPanel.style.display = "none";
             friendsPanel.style.display = "block";
             emptyOwner.style.display = "none";
             emptyFriends.style.display = "inline";
         } else {
-            viewLabel.textContent = "Owner (edit)";
+            viewLabel.textContent = "Owner (manage)";
             listSubtitle.textContent =
-                "Add items & send the friends link so people can shop without spoiling surprises.";
+                "Add and manage gift ideas. Share the shopping link so friends can mark purchases without spoiling surprises.";
             ownerPanel.style.display = "block";
             friendsPanel.style.display = "none";
             emptyOwner.style.display = "inline";
@@ -748,8 +746,7 @@
                     console.error("Error inserting item:", error);
                     return;
                 }
-                // Add new item to local list
-                items.push(data);
+                // don't push to `items` here — loadData() will fetch fresh data
             }
 
             resetForm();
@@ -768,77 +765,7 @@
             await loadData();
         }
 
-        function resetForm() {
-            editingId = null;
-            nameInput.value = "";
-            urlInput.value = "";
-            priceInput.value = "";
-            notesInput.value = "";
-            form.querySelector("button[type='submit']").innerHTML =
-                "<span>➕</span> Add item";
-        }
-
-        form?.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            if (isFriendsView) return; // friends can't edit
-
-            const name = nameInput.value.trim();
-            const url = urlInput.value.trim();
-            const price = priceInput.value.trim();
-            const notes = notesInput.value.trim();
-
-            if (!name) return;
-
-            if (editingId) {
-                const { error } = await supabase
-                    .from("items")
-                    .update({ name, url, price, notes })
-                    .eq("id", editingId);
-
-                if (error) {
-                    console.error("Error updating item:", error);
-                    return;
-                }
-            } else {
-                const { data, error } = await supabase
-                    .from("items")
-                    .insert([{ name, url, price, notes }])
-                    .select()
-                    .single();
-
-                if (error) {
-                    console.error("Error inserting item:", error);
-                    return;
-                }
-                // Add new item to local list
-                items.push(data);
-            }
-
-            resetForm();
-            await loadData(); // reload from server
-        });
-
-        function removeItem(id) {
-            if (!confirm("Remove this item from your list?")) return;
-            items = items.filter((i) => i.id !== id);
-            purchases = purchases.filter((b) => b.itemId !== id);
-            render();
-        }
-
-        resetListBtn?.addEventListener("click", () => {
-            if (
-                confirm(
-                    "This will clear your entire list on this device only. Continue?"
-                )
-            ) {
-                items = [];
-                purchases = [];
-                resetForm();
-                render();
-            }
-        });
-
-        // --- Friends actions (mark as bought, local-only for now) ---
+        // --- Friends actions (mark as bought) ---
         const friendsResetBtn = document.getElementById("friends-reset");
 
         async function markBought(itemId) {
