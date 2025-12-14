@@ -487,7 +487,16 @@
         </main>
     </div>
 
+    <!-- Added Supabase client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
     <script>
+        // Supabase client initialization (replace with your values)
+        const SUPABASE_URL = "https://rjygaadgelikqffistfa.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_IwOWJrfCvpwtUT9mS_2uBQ_hjyVpepU";
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         // --- View mode detection (owner vs friends) ---
         const params = new URLSearchParams(window.location.search);
         const isFriendsView = params.has("friends");
@@ -518,33 +527,40 @@
         }
 
         // --- Local persistence (prototype) ---
-        const STORAGE_KEY_ITEMS = "xmas_list_items_v1";
-        const STORAGE_KEY_FRIEND_BUYS = "xmas_friend_buys_v1";
-
         let items = [];
-        let friendBuys = [];
+        let purchases = []; // replaces friendBuys
 
-        function loadData() {
-            try {
-                items = JSON.parse(localStorage.getItem(STORAGE_KEY_ITEMS) || "[]");
-            } catch {
+        async function loadData() {
+            // Load items
+            const { data: itemsData, error: itemsError } = await supabase
+                .from("items")
+                .select("*")
+                .order("created_at", { ascending: true });
+
+            if (itemsError) {
+                console.error("Error loading items:", itemsError);
                 items = [];
+            } else {
+                items = itemsData || [];
             }
-            try {
-                friendBuys = JSON.parse(
-                    localStorage.getItem(STORAGE_KEY_FRIEND_BUYS) || "[]"
-                );
-            } catch {
-                friendBuys = [];
+
+            // Only load purchases in friends view
+            if (isFriendsView) {
+                const { data: purchasesData, error: purchasesError } = await supabase
+                    .from("purchases")
+                    .select("*");
+
+                if (purchasesError) {
+                    console.error("Error loading purchases:", purchasesError);
+                    purchases = [];
+                } else {
+                    purchases = purchasesData || [];
+                }
+            } else {
+                purchases = [];
             }
-        }
 
-        function saveItems() {
-            localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(items));
-        }
-
-        function saveFriendBuys() {
-            localStorage.setItem(STORAGE_KEY_FRIEND_BUYS, JSON.stringify(friendBuys));
+            render();
         }
 
         // --- Rendering ---
@@ -603,23 +619,17 @@
                     meta.appendChild(price);
                 }
 
-                const boughtIdsForThisItem = friendBuys
-                    .filter((b) => b.itemId === item.id)
-                    .map((b) => b.who || "Someone");
+                const boughtForThisItem = purchases.filter(
+                    (p) => p.item_id === item.id
+                );
+                const boughtCount = boughtForThisItem.length;
 
-                if (isFriendsView && boughtIdsForThisItem.length > 0) {
+                if (isFriendsView && boughtCount > 0) {
                     const bought = document.createElement("span");
                     bought.className = "badge bought";
                     bought.textContent =
-                        boughtIdsForThisItem.length === 1
-                            ? "Already bought"
-                            : `${boughtIdsForThisItem.length} people bought`;
+                        boughtCount === 1 ? "Already bought" : `${boughtCount} people bought`;
                     meta.appendChild(bought);
-
-                    const you = document.createElement("span");
-                    you.className = "badge you";
-                    you.textContent = "You can still buy too if you want";
-                    meta.appendChild(you);
                 }
 
                 main.appendChild(meta);
@@ -630,19 +640,20 @@
                 actions.className = "item-actions";
 
                 if (isFriendsView) {
-                    const alreadyBoughtByYou = friendBuys.some(
-                        (b) => b.itemId === item.id && b.who === "you"
-                    );
+                    const hasAnyPurchase = purchases.some((p) => p.item_id === item.id);
 
                     const buyBtn = document.createElement("button");
                     buyBtn.className = "btn small";
-                    buyBtn.innerHTML = alreadyBoughtByYou
-                        ? "<span>↩</span> I didn't buy this"
-                        : "<span>✅</span> I bought this";
+                    buyBtn.innerHTML = "<span>✅</span> I bought this";
 
-                    buyBtn.addEventListener("click", () => {
-                        toggleFriendBuy(item.id);
-                    });
+                    if (hasAnyPurchase) {
+                        buyBtn.disabled = true;
+                        buyBtn.textContent = "Already bought";
+                    } else {
+                        buyBtn.addEventListener("click", () => {
+                            markBought(item.id);
+                        });
+                    }
 
                     actions.appendChild(buyBtn);
                 } else {
@@ -705,7 +716,7 @@
                 "<span>➕</span> Add item";
         }
 
-        form?.addEventListener("submit", (e) => {
+        form?.addEventListener("submit", async (e) => {
             e.preventDefault();
             if (isFriendsView) return; // friends can't edit
 
@@ -717,38 +728,100 @@
             if (!name) return;
 
             if (editingId) {
-                const idx = items.findIndex((i) => i.id === editingId);
-                if (idx !== -1) {
-                    items[idx] = {
-                        ...items[idx],
-                        name,
-                        url,
-                        price,
-                        notes,
-                    };
+                const { error } = await supabase
+                    .from("items")
+                    .update({ name, url, price, notes })
+                    .eq("id", editingId);
+
+                if (error) {
+                    console.error("Error updating item:", error);
+                    return;
                 }
             } else {
-                items.push({
-                    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-                    name,
-                    url,
-                    price,
-                    notes,
-                    createdAt: Date.now(),
-                });
+                const { data, error } = await supabase
+                    .from("items")
+                    .insert([{ name, url, price, notes }])
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error("Error inserting item:", error);
+                    return;
+                }
+                // Add new item to local list
+                items.push(data);
             }
 
-            saveItems();
             resetForm();
-            render();
+            await loadData(); // reload from server
+        });
+
+        async function removeItem(id) {
+            if (!confirm("Remove this item from your list?")) return;
+
+            const { error } = await supabase.from("items").delete().eq("id", id);
+            if (error) {
+                console.error("Error deleting item:", error);
+                return;
+            }
+
+            await loadData();
+        }
+
+        function resetForm() {
+            editingId = null;
+            nameInput.value = "";
+            urlInput.value = "";
+            priceInput.value = "";
+            notesInput.value = "";
+            form.querySelector("button[type='submit']").innerHTML =
+                "<span>➕</span> Add item";
+        }
+
+        form?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (isFriendsView) return; // friends can't edit
+
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
+            const price = priceInput.value.trim();
+            const notes = notesInput.value.trim();
+
+            if (!name) return;
+
+            if (editingId) {
+                const { error } = await supabase
+                    .from("items")
+                    .update({ name, url, price, notes })
+                    .eq("id", editingId);
+
+                if (error) {
+                    console.error("Error updating item:", error);
+                    return;
+                }
+            } else {
+                const { data, error } = await supabase
+                    .from("items")
+                    .insert([{ name, url, price, notes }])
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error("Error inserting item:", error);
+                    return;
+                }
+                // Add new item to local list
+                items.push(data);
+            }
+
+            resetForm();
+            await loadData(); // reload from server
         });
 
         function removeItem(id) {
             if (!confirm("Remove this item from your list?")) return;
             items = items.filter((i) => i.id !== id);
-            friendBuys = friendBuys.filter((b) => b.itemId !== id);
-            saveItems();
-            saveFriendBuys();
+            purchases = purchases.filter((b) => b.itemId !== id);
             render();
         }
 
@@ -759,9 +832,7 @@
                 )
             ) {
                 items = [];
-                friendBuys = [];
-                saveItems();
-                saveFriendBuys();
+                purchases = [];
                 resetForm();
                 render();
             }
@@ -770,46 +841,47 @@
         // --- Friends actions (mark as bought, local-only for now) ---
         const friendsResetBtn = document.getElementById("friends-reset");
 
-        function toggleFriendBuy(itemId) {
-            const existingIndex = friendBuys.findIndex(
-                (b) => b.itemId === itemId && b.who === "you"
-            );
-            if (existingIndex !== -1) {
-                friendBuys.splice(existingIndex, 1);
-            } else {
-                friendBuys.push({
-                    itemId,
-                    who: "you",
-                    at: Date.now(),
-                });
+        async function markBought(itemId) {
+            const { error } = await supabase
+                .from("purchases")
+                .insert([{ item_id: itemId }]);
+            if (error) {
+                console.error("Error marking as bought:", error);
+                return;
             }
-            saveFriendBuys();
-            render();
+            await loadData();
         }
 
-        friendsResetBtn?.addEventListener("click", () => {
-            if (
-                confirm(
-                    "This clears just YOUR 'I bought this' marks on this device. Continue?"
-                )
-            ) {
-                friendBuys = friendBuys.filter((b) => b.who !== "you");
-                saveFriendBuys();
-                render();
+        async function clearPurchasesForItem(itemId) {
+            const { error } = await supabase
+                .from("purchases")
+                .delete()
+                .eq("item_id", itemId);
+            if (error) {
+                console.error("Error clearing purchases:", error);
+                return;
             }
+            await loadData();
+        }
+
+        friendsResetBtn?.addEventListener("click", async () => {
+            if (
+                !confirm(
+                    "This will clear ALL 'bought' marks for everyone. Continue?"
+                )
+            )
+                return;
+
+            const { error } = await supabase.from("purchases").delete().neq("item_id", null);
+            if (error) {
+                console.error("Error clearing purchases:", error);
+                return;
+            }
+            await loadData();
         });
 
         // --- Init ---
         loadData();
-        render();
-
-        // --- NEXT STEP: Backend hook (Supabase/Firebase) ---
-        // To upgrade this from "local-only" to shared data:
-        // - Replace loadData/saveItems with calls to your backend.
-        // - Replace friendBuys logic with a shared "purchases" table.
-        // - Use two URLs:
-        //   - /   → owner view (never requests purchased info)
-        //   - /?friends=1 → gifter view (can read/write purchases)
     </script>
 </body>
 
