@@ -488,7 +488,7 @@
         const SUPABASE_URL = "https://rjygaadgelikqffistfa.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_IwOWJrfCvpwtUT9mS_2uBQ_hjyVpepU";
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // --- View mode detection (owner vs friends) ---
         const params = new URLSearchParams(window.location.search);
@@ -526,7 +526,7 @@
 
         async function loadData() {
             // Load items
-            const { data: itemsData, error: itemsError } = await supabase
+            const { data: itemsData, error: itemsError } = await supabaseClient
                 .from("items")
                 .select("*")
                 .order("created_at", { ascending: true });
@@ -540,7 +540,7 @@
 
             // Only load purchases in friends view
             if (isFriendsView) {
-                const { data: purchasesData, error: purchasesError } = await supabase
+                const { data: purchasesData, error: purchasesError } = await supabaseClient
                     .from("purchases")
                     .select("*");
 
@@ -746,7 +746,7 @@
                     return;
                 }
             } else {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from("items")
                     .insert([{ name, url, price, notes }])
                     .select()
@@ -766,7 +766,7 @@
         async function removeItem(id) {
             if (!confirm("Remove this item from your list?")) return;
 
-            const { error } = await supabase.from("items").delete().eq("id", id);
+            const { error } = await supabaseClient.from("items").delete().eq("id", id);
             if (error) {
                 console.error("Error deleting item:", error);
                 return;
@@ -790,7 +790,7 @@
         }
 
         async function clearPurchasesForItem(itemId) {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from("purchases")
                 .delete()
                 .eq("item_id", itemId);
