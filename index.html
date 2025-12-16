@@ -736,7 +736,7 @@
             if (!name) return;
 
             if (editingId) {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from("items")
                     .update({ name, url, price, notes })
                     .eq("id", editingId);
@@ -779,7 +779,7 @@
         const friendsResetBtn = document.getElementById("friends-reset");
 
         async function markBought(itemId) {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from("purchases")
                 .insert([{ item_id: itemId }]);
             if (error) {
@@ -809,7 +809,7 @@
             )
                 return;
 
-            const { error } = await supabase.from("purchases").delete().neq("item_id", null);
+            const { error } = await supabaseClient.from("purchases").delete().neq("item_id", null);
             if (error) {
                 console.error("Error clearing purchases:", error);
                 return;
